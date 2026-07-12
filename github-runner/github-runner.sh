@@ -3,14 +3,14 @@
 set -e
 
 # === Config ===
-REPO="mor-tesla/dlb"
-RUNNER_NAME="dlb-web-runner"
-LABELS="web,dlb"
+REPO="<owner>/<repo>"  # set to your repository
+RUNNER_NAME="web-runner"
+LABELS="web"
 IMAGE_NAME="github-runner"
 CONTAINER_NAME="github-runner"
 GH_RUNNER_URL="https://github.com/${REPO}"
 RUNNER_HOME="/home/runner/actions-runner"
-RUNNER_VOLUME="/opt/dlb/web/github-runner"
+RUNNER_VOLUME="/opt/app/web/github-runner"
 
 # === Read token from env or arg ===
 GH_RUNNER_TOKEN="${GH_RUNNER_TOKEN:-$1}"
@@ -52,5 +52,5 @@ docker run -d \
     -e GH_RUNNER_LABELS="$LABELS" \
     -v "$RUNNER_VOLUME":"$RUNNER_HOME" \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /opt/dlb:/opt/dlb \
+    -v /opt/app:/opt/app \
     "$IMAGE_NAME"

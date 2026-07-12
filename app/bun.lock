@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "dlb",
+      "name": "web",
       "dependencies": {
         "@hookform/resolvers": "latest",
         "@radix-ui/react-alert-dialog": "latest",
