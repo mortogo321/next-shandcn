@@ -1,6 +1,6 @@
-FROM ubuntu:latest
+FROM ubuntu:24.04
 
-ARG RUNNER_VERSION
+ARG RUNNER_VERSION=2.329.0
 ENV RUNNER_VERSION=${RUNNER_VERSION}
 ENV RUNNER_HOME=/home/runner/actions-runner
 ENV DEBIAN_FRONTEND=noninteractive

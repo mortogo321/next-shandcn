@@ -5,7 +5,10 @@ export function getUserFromCookie(cookie: string | undefined): SessionUser | nul
   if (!cookie) return null;
 
   try {
-    const payload = JSON.parse(atob(cookie.split(".")[1]));
+    const parts = cookie.split(".");
+    const payloadSegment = parts[1];
+    if (!payloadSegment) return null;
+    const payload: unknown = JSON.parse(atob(payloadSegment));
 
     return payload as SessionUser;
   } catch {

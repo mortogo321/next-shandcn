@@ -3,15 +3,21 @@ name: next-shadcn
 services:
   web:
     build:
-      context: ..
-      dockerfile: app/Dockerfile
+      context: ../app
+      dockerfile: Dockerfile
       target: development
-    command: yarn start:dev
     restart: unless-stopped
     ports:
-      - 8000:8000
+      - 3000:3000
     env_file:
       - ../app/.env.development
     volumes:
       - ../app:/app
-      - ../app/.env.development:/app/.env
+      - /app/node_modules
+      - /app/.next
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

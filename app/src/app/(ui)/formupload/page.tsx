@@ -15,7 +15,8 @@ function formatBytes(bytes: number) {
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  const unit = sizes[i] ?? "Bytes";
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + unit;
 }
 
 export default function FormUploadPage() {
@@ -31,6 +32,7 @@ export default function FormUploadPage() {
       const newFiles: FileItem[] = [];
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
+        if (!file) continue;
         newFiles.push({
           name: file.name,
           size: file.size,
@@ -71,7 +73,7 @@ export default function FormUploadPage() {
       <div className="flex justify-between items-center gap-3 mb-6">
         <div>
           <span className="text-2xl font-semibold">Files and assets</span>
-          <p className="text-gray-400 text-sm mt-1">Documents ans attachments that have been uploaded as part of this Lokblok</p>
+          <p className="text-gray-400 text-sm mt-1">Documents and attachments uploaded to this workspace</p>
         </div>
         <button className="bg-gradient-to-r from-[#009FFF] to-[#006EFF] text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 shadow hover:from-[#38bdf8] hover:to-[#1e90ff]">
           <IconPower size={28} /> Activate Now
@@ -86,19 +88,23 @@ export default function FormUploadPage() {
         </label>
         <span className="text-gray-500 text-xs mt-2">SVG, PNG, JPG or GIF (max. 3MB)</span>
         <input id="file-upload" type="file" className="hidden" ref={fileInputRef} onChange={handleFileChange} accept=".svg,.png,.jpg,.jpeg,.gif,.pdf,.txt,.xlsx,.pptx" multiple />
-        {uploading && files.length > 0 && (
+        {uploading && files.length > 0 && (() => {
+          const latest = files[files.length - 1];
+          if (!latest) return null;
+          return (
           <div className="w-full mt-6">
             <div className="flex items-center gap-2 mb-1">
               <IconFile size={20} className="text-[#38bdf8]" />
-              <span className="text-sm">{files[files.length - 1].name}</span>
-              <span className="text-xs text-gray-400">{formatBytes(files[files.length - 1].size)}</span>
+              <span className="text-sm">{latest.name}</span>
+              <span className="text-xs text-gray-400">{formatBytes(latest.size)}</span>
               <span className="text-xs text-gray-400">Loading</span>
             </div>
             <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
               <div className="h-1 bg-[#38bdf8] transition-all" style={{ width: `${uploadProgress}%` }} />
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
       {/* File Table */}
       <div className="flex items-center justify-between mb-2">

@@ -3,11 +3,19 @@ name: next-shadcn
 services:
   web:
     build:
-      context: ..
-      dockerfile: app/Dockerfile
+      context: ../app
+      dockerfile: Dockerfile
       target: uat
     restart: unless-stopped
     ports:
       - 3000:3000
     env_file:
       - ../app/.env.uat
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET must be set in environment}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

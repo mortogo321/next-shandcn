@@ -6,17 +6,17 @@
 .dockerignore
 Dockerfile
 
-dist
 node_modules
+.next
+out
+dist
 coverage
+*.tsbuildinfo
+next-env.d.ts
 
-.env*
-!.env.uat
-!.env.production
+.env.local
+.env*.local
+!.env.example
 
 .editorconfig
 README.md
-tslint.json
-nodemon.json
-.eslintrc.js
-.prettierrc

@@ -1,55 +1,62 @@
-ARG IMAGE=node:alpine
+# syntax=docker/dockerfile:1
+ARG BUN_VERSION=1.4.2
+ARG NODE_VERSION=26.10-alpine
 ARG PORT=3000
 
-# base
-FROM ${IMAGE} AS base
-
+# ---- deps (bun, cached) ----
+FROM oven/bun:${BUN_VERSION}-alpine AS deps
 WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
-RUN apk update && apk add --no-cache curl libc6-compat openssl
-
-COPY ../app/package.json ../app/yarn.lock ./
-
-RUN yarn install --frozen-lockfile
-
-# builder
-FROM base AS builder
-
+# ---- builder ----
+FROM oven/bun:${BUN_VERSION}-alpine AS builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+# Placeholder only for the build layer (not persisted); set real AUTH_SECRET at runtime.
+RUN AUTH_SECRET=build-placeholder-replace-at-runtime bun run build
 
-COPY ../app .
-
-RUN echo "AUTH_SECRET=\"$(openssl rand -base64 32)\"" > .env.local
-
-RUN yarn build
-
-# runtime
-FROM ${IMAGE} AS runtime
-
+# ---- development (bun hot reload, root for bind-mount parity) ----
+FROM oven/bun:${BUN_VERSION}-alpine AS development
+ARG PORT=3000
 WORKDIR /app
-
-ARG PORT
+ENV NODE_ENV=development \
+    NEXT_TELEMETRY_DISABLED=1
 ENV PORT=${PORT}
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY . .
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD bun -e "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+CMD ["bun", "run", "dev", "--", "--port", "3000"]
 
-COPY --from=builder /app/.next .next
-COPY --from=builder /app/public public
-COPY --from=builder /app/node_modules node_modules
-COPY --from=builder /app/package.json package.json
+# ---- runtime base (hardened, non-root) ----
+FROM node:${NODE_VERSION} AS runtime
+ARG PORT=3000
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+ENV PORT=${PORT}
+RUN apk add --no-cache curl \
+  && addgroup -S appgroup -g 1001 \
+  && adduser -S appuser -u 1001 -G appgroup
+COPY --from=builder --chown=appuser:appgroup /app/public ./public
+COPY --from=builder --chown=appuser:appgroup /app/.next/standalone ./
+COPY --from=builder --chown=appuser:appgroup /app/.next/static ./.next/static
+USER appuser
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||'3000')+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
-EXPOSE ${PORT}
-
-# uat
+# ---- uat ----
 FROM runtime AS uat
+ENV NODE_ENV=production
+CMD ["node", "server.js"]
 
-COPY --from=builder /app/.env.uat .env
-COPY --from=builder /app/.env.local .
-
-CMD ["yarn", "start"]
-
-# production
+# ---- production ----
 FROM runtime AS production
-
-COPY --from=builder /app/.env.production .env
-COPY --from=builder /app/.env.local .
-
-CMD ["yarn", "start"]
+ENV NODE_ENV=production
+CMD ["node", "server.js"]

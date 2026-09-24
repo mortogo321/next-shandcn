@@ -8,8 +8,8 @@ interface Props {
 }
 
 export const metadata: Metadata = {
-  title: "Welcome to Lokblok",
-  description: "Enterprise-grade zero trust platform with phantom secrets, non-custodial key management, and certified hardware tokens for ultimate security",
+  title: "Next.js Admin Dashboard",
+  description: "Next.js admin dashboard starter — shadcn/ui, NextAuth, role-based layouts",
 };
 
 export default function RootLayout({ children }: Readonly<Props>) {
